@@ -19,12 +19,12 @@ Auction 187 (2026 December Auction, live 12 Dec 2026 11:00 HKT): 369 lots, 285 w
 
 ## Phase 2: browse page
 
-`site/index.html` reads `site/lots.json` (a copy of `data/187/lots.json`).
+`site/index.html` reads `site/view.json` (built by `pipeline/value.py`).
 
 Open it on your computer:
 
 ```
-cp data/187/lots.json site/lots.json
+python3 pipeline/value.py 187
 cd site && python3 -m http.server 8000
 ```
 
