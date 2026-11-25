@@ -70,22 +70,23 @@ def load_overrides(path):
 
 
 def pick_price(lot, prices_by_lot, overrides):
-    """Return (price_750_hkd, source, confidence, url) by priority."""
+    """Return (price_750_hkd, source, confidence, url, kind) by priority."""
     lid = lot["lot_id"]
     if lid in overrides:
-        return overrides[lid]["price_750_hkd"], "manual", "manual", ""
+        return overrides[lid]["price_750_hkd"], "manual", "manual", "", ""
     cands = [p for p in prices_by_lot.get(lid, []) if p.get("price_750_hkd")]
     if cands:
         best = max(cands, key=lambda p: (CONF_RANK.get(p.get("confidence"), 0), p.get("date", "")))
-        return best["price_750_hkd"], best.get("source", "?"), best.get("confidence", "check"), best.get("url", "")
+        return (best["price_750_hkd"], best.get("source", "?"), best.get("confidence", "check"),
+                best.get("url", ""), best.get("price_kind", ""))
     # Fallback: Madison estimate midpoint per 750 ml incl. premium (house view, not market)
     if lot.get("est_low") and lot.get("est_high") and lot.get("eq750"):
         mid = (lot["est_low"] + lot["est_high"]) / 2 * (1 + PREMIUM) / lot["eq750"]
-        return round(mid, 2), "house", "house", ""
-    return None, "none", "none", ""
+        return round(mid, 2), "house", "house", "", ""
+    return None, "none", "none", "", ""
 
 
-def value_row(lot, m750, source, conf, url):
+def value_row(lot, m750, source, conf, url, kind=""):
     hammer = lot.get("current") or lot.get("est_low")
     eq = lot.get("eq750")
     row = {k: lot[k] for k in ("lot_id", "lot_no", "url", "title", "category", "colour", "vintage",
@@ -93,7 +94,7 @@ def value_row(lot, m750, source, conf, url):
                                "bottle_ml", "eq750", "packing", "score", "est_low", "est_high",
                                "current", "status", "mixed", "needs_check")}
     row.update({"hammer": hammer, "price_750": m750, "price_source": source,
-                "price_conf": conf, "price_url": url})
+                "price_conf": conf, "price_url": url, "price_kind": kind})
     if hammer is None:
         return row
     cost = hammer * (1 + PREMIUM)
@@ -132,8 +133,8 @@ def main(aid):
 
     rows = []
     for lot in lots["lots"]:
-        m, src, conf, url = pick_price(lot, by_lot, overrides)
-        rows.append(value_row(lot, m, src, conf, url))
+        m, src, conf, url, kind = pick_price(lot, by_lot, overrides)
+        rows.append(value_row(lot, m, src, conf, url, kind))
 
     out = {"auction_id": lots["auction_id"], "premium_pct": PREMIUM * 100, "band_pct": BAND_PCT,
            "built": date.today().isoformat(), "lots": rows}

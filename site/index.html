@@ -262,7 +262,7 @@ function valueCell(l){
   const save = (l.gap>=0?"save ":"pay ")+fmt(Math.abs(st.view==="lot"? l.gap : l.gap/(u||1))).replace("HKD ","");
   return `${fmt(v)} <span class="badge b-${l.band}">${BAND_TXT[l.band]} ${pct}</span>
     <small>${save} · walk away ${fmt(l.walk_away)}</small>
-    <small class="src">${SRC_TXT[l.price_source]||esc(l.price_source)}${l.price_conf&&l.price_conf!=="manual"?" · "+l.price_conf:""}</small>`;
+    <small class="src">${l.price_url?`<a href="${esc(l.price_url)}" target="_blank" rel="noopener" style="color:inherit">`:""}${SRC_TXT[l.price_source]||esc(l.price_source)}${l.price_kind==="offer"?" HK shop price":l.price_kind==="avg"?" average":""}${l.price_url?"</a>":""}${l.price_conf&&l.price_conf!=="manual"?" · "+l.price_conf:""}</small>`;
 }
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 
