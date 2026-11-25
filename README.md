@@ -29,3 +29,15 @@ cd site && python3 -m http.server 8000
 ```
 
 Then go to http://localhost:8000. Filters: type, region, producer, vintage range, max HKD per bottle, bottle size, single or mixed lots. Sort by lot, price per bottle, lot price, vintage, or score. Prices include the 22.5% premium by default. Stars are saved in your browser only (shared stars come in phase 5).
+
+## Phase 3: market value
+
+```
+python3 pipeline/value.py 187     # writes site/view.json
+```
+
+Price order per lot: `data/187/overrides.csv` (your own price) > `data/187/prices.json` (Vivino, wineapi.io, past Madison sales; best confidence wins) > Madison estimate only ("No market price yet").
+
+To set your own price, add a line to `overrides.csv`: `lot_id,price_750_hkd,note` (price per 750 ml in HKD).
+
+Badges: Under / At market / Over by more than 10% after the 22.5% premium. Walk-away bid = market value ÷ 1.225, rounded down to a valid Madison bid step.

@@ -8,6 +8,7 @@
   --bg:#f6f5f7; --surface:#fff; --fg:#1d1a20; --muted:#625b69; --line:#dcd7e0;
   --accent:#7a1f3d; --accent-soft:#f3e4ea; --on-accent:#fff;
   --red:#8b2335; --white:#a08a2c; --fizz:#3d6f8f; --mixed:#6b4fa0;
+  --good:#1f7a4d; --good-soft:#e1f2e9; --warn:#8a5f00; --warn-soft:#f7edd4; --bad:#b0302a; --bad-soft:#f7e1df;
   --f-display:"Space Grotesk","Segoe UI",system-ui,sans-serif;
   --f-body:"Inter","Segoe UI",system-ui,sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
@@ -15,11 +16,11 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#141217; --surface:#1d1a21; --fg:#ece8ef; --muted:#a79fb0; --line:#353039;
   --accent:#e07a9b; --accent-soft:#3a1d29; --on-accent:#1d1a21;
-  --red:#e8798a; --white:#e0c869; --fizz:#7db8dc; --mixed:#b9a2e8; color-scheme:dark}}
+  --red:#e8798a; --white:#e0c869; --fizz:#7db8dc; --mixed:#b9a2e8; --good:#5cc994; --good-soft:#163326; --warn:#e0b351; --warn-soft:#3a2e12; --bad:#ef7d75; --bad-soft:#3d1d1b; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#141217; --surface:#1d1a21; --fg:#ece8ef; --muted:#a79fb0; --line:#353039;
   --accent:#e07a9b; --accent-soft:#3a1d29; --on-accent:#1d1a21;
-  --red:#e8798a; --white:#e0c869; --fizz:#7db8dc; --mixed:#b9a2e8; color-scheme:dark}
+  --red:#e8798a; --white:#e0c869; --fizz:#7db8dc; --mixed:#b9a2e8; --good:#5cc994; --good-soft:#163326; --warn:#e0b351; --warn-soft:#3a2e12; --bad:#ef7d75; --bad-soft:#3d1d1b; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:14px;line-height:1.5}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
@@ -47,7 +48,7 @@ input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid 
 main{max-width:1180px;margin:0 auto;padding-block:14px 60px;display:flex;flex-direction:column;gap:10px}
 .bar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;color:var(--muted);font-size:.85rem}
 .list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
-.row{display:grid;grid-template-columns:52px minmax(0,1fr) 150px 150px 40px;gap:12px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line)}
+.row{display:grid;grid-template-columns:52px minmax(0,1fr) 140px 170px 40px;gap:12px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line)}
 .row:last-child{border-bottom:0}
 .row.head{font-family:var(--f-mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:var(--bg);padding-block:8px}
 .lotno{font-family:var(--f-mono);color:var(--muted);font-size:.85rem}
@@ -58,6 +59,10 @@ main{max-width:1180px;margin:0 auto;padding-block:14px 60px;display:flex;flex-di
 .tag.chk{border-color:var(--mixed);color:var(--mixed)}
 .money{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--f-mono);font-size:.88rem;line-height:1.35}
 .money small{display:block;color:var(--muted);font-size:.72rem;font-family:var(--f-body)}
+.badge{display:inline-block;font-family:var(--f-mono);font-size:.72rem;padding:2px 7px;border-radius:4px;font-weight:500}
+.b-under{background:var(--good-soft);color:var(--good)} .b-at{background:var(--warn-soft);color:var(--warn)} .b-over{background:var(--bad-soft);color:var(--bad)}
+.b-house,.b-none{background:var(--bg);color:var(--muted);border:1px solid var(--line)}
+.src{font-size:.7rem;color:var(--muted)}
 .star{font-size:1.25rem;background:none;border:0;cursor:pointer;color:var(--line);line-height:1;padding:4px}
 .star[aria-pressed="true"]{color:var(--accent)}
 .empty{padding:40px 16px;text-align:center;color:var(--muted)}
@@ -90,6 +95,7 @@ main{max-width:1180px;margin:0 auto;padding-block:14px 60px;display:flex;flex-di
     <label>Max HKD / btl<input id="pmax" class="num" type="number" inputmode="numeric" placeholder="any"></label>
     <label>Size<select id="size"><option value="">All</option><option value="750">750 ml</option><option value="1500">Magnum 1.5 L</option><option value="big">Larger than 1.5 L</option></select></label>
     <label>Lots<select id="kind"><option value="">All wine lots</option><option value="single">Single wine only</option><option value="mixed">Mixed lots only</option></select></label>
+    <label>Value<select id="band"><option value="">All</option><option value="under">Under market</option><option value="at">At market</option><option value="over">Over market</option><option value="priced">Has market price</option><option value="unpriced">No market price yet</option><option value="check">Needs check</option></select></label>
     <label>Sort<select id="sort">
       <option value="lot">Lot number</option>
       <option value="pb">Price per bottle, low first</option>
@@ -97,6 +103,8 @@ main{max-width:1180px;margin:0 auto;padding-block:14px 60px;display:flex;flex-di
       <option value="tot">Lot price, low first</option>
       <option value="vin">Vintage, old first</option>
       <option value="score">Critic score, high first</option>
+      <option value="gap">Best value first (gap %)</option>
+      <option value="gaphkd">Biggest saving first (HKD)</option>
     </select></label>
     <button class="btn" id="reset" type="button">Clear filters</button>
   </div>
@@ -118,7 +126,7 @@ main{max-width:1180px;margin:0 auto;padding-block:14px 60px;display:flex;flex-di
     </div>
   </div>
   <div class="list" id="list"></div>
-  <p class="note">Prices are the Madison estimate range. "Per bottle" for mixed sizes means per 750 ml equivalent. Market price and value badges arrive in phase 3. Stars stay in this browser only for now; shared stars come in phase 5.</p>
+  <p class="note">Prices are the Madison estimate range. "Per bottle" for mixed sizes means per 750 ml equivalent. Market value = market price per 750 ml × bottles. Badge: under / at / over market by more than 10% after the 22.5% premium. Walk-away = highest hammer bid that still costs no more than market value. "No market price yet" lots show the Madison estimate only. Stars stay in this browser only for now; shared stars come in phase 5.</p>
 </main>
 
 <script>
@@ -195,6 +203,11 @@ function filtered(skip){
     if (size==="big" && !(l.bottle_ml>1500)) return false;
     if (kind==="single" && l.mixed) return false;
     if (kind==="mixed" && !l.mixed) return false;
+    const band=$("band").value;
+    if (band==="priced" && !l.value) return false;
+    if (band==="unpriced" && l.value) return false;
+    if (band==="check" && !(l.needs_check || l.price_conf==="check")) return false;
+    if (["under","at","over"].includes(band) && l.band!==band) return false;
     if (st.starsOnly && !stars.has(l.lot_id)) return false;
     return true;
   });
@@ -212,6 +225,8 @@ function render(){
   if (s==="tot") rows.sort((a,b)=>tot(a)-tot(b));
   if (s==="vin") rows.sort((a,b)=>(a.vintage||9999)-(b.vintage||9999));
   if (s==="score") rows.sort((a,b)=>scoreNum(b.score)-scoreNum(a.score));
+  if (s==="gap") rows.sort((a,b)=>(a.gap_pct??1e9)-(b.gap_pct??1e9));
+  if (s==="gaphkd") rows.sort((a,b)=>(b.gap??-1e12)-(a.gap??-1e12));
   if (s==="lot") rows.sort((a,b)=>a.lot_no-b.lot_no);
 
   const btls = rows.reduce((t,l)=>t+(l.bottles||0),0);
@@ -220,7 +235,7 @@ function render(){
   const pre = st.prem ? "incl. 22.5%" : "hammer";
   const list=$("list");
   if (!rows.length){ list.innerHTML=`<div class="empty">No lots match these filters. Try "Clear filters".</div>`; return; }
-  list.innerHTML = `<div class="row head"><div>Lot</div><div>Wine</div><div class="money">Low est. · ${unit}</div><div class="money">High est. · ${unit}</div><div></div></div>` +
+  list.innerHTML = `<div class="row head"><div>Lot</div><div>Wine</div><div class="money">Low est. · ${unit}</div><div class="money">Market value · ${unit}</div><div></div></div>` +
     rows.map(l=>{
       const tags=[l.packing && `<span class="tag">${esc(l.packing)}</span>`, l.score && `<span class="tag">${esc(l.score)}</span>`, l.needs_check && `<span class="tag chk">mixed lot</span>`].filter(Boolean).join("");
       const per = (st.view==="btl" && !(l.bottles && l.parts.length===1)) ? "per 750 ml eq." : pre;
@@ -229,10 +244,25 @@ function render(){
         <div class="tcell"><div class="ttl"><a href="${l.url}" target="_blank" rel="noopener">${esc(l.title)}</a></div>
           <div class="meta"><span>${esc(l.qty_text.replace(/\s*\(.*\)/,""))}</span>${l.region?`<span>${esc(l.region)}</span>`:""}${tags}</div></div>
         <div class="money">${fmt(price(l,"low"))}<small>${l.current?"current bid":"low est."} · ${per}</small></div>
-        <div class="money">${fmt(price(l,"high"))}<small>high est.</small></div>
+        <div class="money">${valueCell(l)}</div>
         <button class="star" type="button" aria-label="Star lot ${l.lot_no}" aria-pressed="${stars.has(l.lot_id)}" data-id="${l.lot_id}">★</button>
       </div>`;
     }).join("");
+}
+const BAND_TXT={under:"Under",at:"At market",over:"Over"};
+const SRC_TXT={vivino:"Vivino",wineapi:"wineapi.io",manual:"your price","madison-past":"past Madison sale"};
+function valueCell(l){
+  if (!l.value){
+    const hi=fmt(price(l,"high"));
+    return `<span class="badge b-${l.band||'none'}">${l.band==="house"?"No market price yet":"No price"}</span><small>high est. ${hi}</small>`;
+  }
+  const u=units(l);
+  const v = st.view==="lot" ? l.value : (u? l.value/u : null);
+  const pct = (l.gap_pct>0?"+":"")+l.gap_pct.toFixed(0)+"%";
+  const save = (l.gap>=0?"save ":"pay ")+fmt(Math.abs(st.view==="lot"? l.gap : l.gap/(u||1))).replace("HKD ","");
+  return `${fmt(v)} <span class="badge b-${l.band}">${BAND_TXT[l.band]} ${pct}</span>
+    <small>${save} · walk away ${fmt(l.walk_away)}</small>
+    <small class="src">${SRC_TXT[l.price_source]||esc(l.price_source)}${l.price_conf&&l.price_conf!=="manual"?" · "+l.price_conf:""}</small>`;
 }
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 
@@ -242,18 +272,18 @@ $("list").addEventListener("click",e=>{
   store.set("wc-stars-187",[...stars]); b.setAttribute("aria-pressed",stars.has(id));
   $("count").textContent=$("count").textContent.replace(/\d+ starred/, stars.size+" starred");
 });
-["q","region","producer","vmin","vmax","pmax","size","kind","sort"].forEach(id=>$(id).addEventListener("input",render));
+["q","region","producer","vmin","vmax","pmax","size","kind","band","sort"].forEach(id=>$(id).addEventListener("input",render));
 function setPair(a,b,on){ $(a).setAttribute("aria-pressed",on); $(b).setAttribute("aria-pressed",!on); }
 $("vLot").onclick=()=>{st.view="lot";setPair("vLot","vBtl",true);render()};
 $("vBtl").onclick=()=>{st.view="btl";setPair("vLot","vBtl",false);render()};
 $("pOn").onclick=()=>{st.prem=true;setPair("pOn","pOff",true);render()};
 $("pOff").onclick=()=>{st.prem=false;setPair("pOn","pOff",false);render()};
 $("starsOnly").onclick=()=>{st.starsOnly=!st.starsOnly;$("starsOnly").setAttribute("aria-pressed",st.starsOnly);$("starsOnly").classList.toggle("chip",false);$("starsOnly").style.background=st.starsOnly?"var(--accent-soft)":"";render()};
-$("reset").onclick=()=>{["q","region","producer","vmin","vmax","pmax","size","kind"].forEach(id=>$(id).value="");$("sort").value="lot";st.colours=["Red"];document.querySelectorAll("#colours .chip").forEach(b=>b.setAttribute("aria-pressed",st.colours.includes(b.dataset.c)));render()};
+$("reset").onclick=()=>{["q","region","producer","vmin","vmax","pmax","size","kind","band"].forEach(id=>$(id).value="");$("sort").value="lot";st.colours=["Red"];document.querySelectorAll("#colours .chip").forEach(b=>b.setAttribute("aria-pressed",st.colours.includes(b.dataset.c)));render()};
 
 setPair("vLot","vBtl",st.view==="lot"); setPair("pOn","pOff",st.prem);
 when(); setInterval(when,60000);
-fetch("lots.json").then(r=>r.json()).then(d=>{LOTS=d.lots; buildChips(); render();})
-  .catch(()=>{$("count").textContent="Could not load lots.json. Open this page through a web server, not as a file.";});
+fetch("view.json").then(r=>r.json()).then(d=>{LOTS=d.lots; buildChips(); render();})
+  .catch(()=>{$("count").textContent="Could not load view.json. Run pipeline/value.py, then open this page through a web server, not as a file.";});
 })();
 </script>
