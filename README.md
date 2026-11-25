@@ -16,3 +16,16 @@ Rules: no login from code, no bids, no calls to the site's private API, 1.5 s be
 Auction 187 (2026 December Auction, live 12 Dec 2026 11:00 HKT): 369 lots, 285 wine, 84 spirits. Buyer's premium 22.5%.
 
 `needs_check: true` marks mixed lots with no single producer. They need the lot page detail before we can price them.
+
+## Phase 2: browse page
+
+`site/index.html` reads `site/lots.json` (a copy of `data/187/lots.json`).
+
+Open it on your computer:
+
+```
+cp data/187/lots.json site/lots.json
+cd site && python3 -m http.server 8000
+```
+
+Then go to http://localhost:8000. Filters: type, region, producer, vintage range, max HKD per bottle, bottle size, single or mixed lots. Sort by lot, price per bottle, lot price, vintage, or score. Prices include the 22.5% premium by default. Stars are saved in your browser only (shared stars come in phase 5).

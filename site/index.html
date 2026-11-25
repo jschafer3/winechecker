@@ -1,0 +1,259 @@
+<meta charset="utf-8">
+<title>WineChecker 187</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky filter bar on top, lot list below; filters collapse into a drawer on phones */
+:root{
+  --bg:#f6f5f7; --surface:#fff; --fg:#1d1a20; --muted:#625b69; --line:#dcd7e0;
+  --accent:#7a1f3d; --accent-soft:#f3e4ea; --on-accent:#fff;
+  --red:#8b2335; --white:#a08a2c; --fizz:#3d6f8f; --mixed:#6b4fa0;
+  --f-display:"Space Grotesk","Segoe UI",system-ui,sans-serif;
+  --f-body:"Inter","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#141217; --surface:#1d1a21; --fg:#ece8ef; --muted:#a79fb0; --line:#353039;
+  --accent:#e07a9b; --accent-soft:#3a1d29; --on-accent:#1d1a21;
+  --red:#e8798a; --white:#e0c869; --fizz:#7db8dc; --mixed:#b9a2e8; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141217; --surface:#1d1a21; --fg:#ece8ef; --muted:#a79fb0; --line:#353039;
+  --accent:#e07a9b; --accent-soft:#3a1d29; --on-accent:#1d1a21;
+  --red:#e8798a; --white:#e0c869; --fizz:#7db8dc; --mixed:#b9a2e8; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:14px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.hrow{max-width:1180px;margin:0 auto;padding-block:12px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between}
+h1{font-family:var(--f-display);font-size:1.3rem;margin:0;letter-spacing:-.01em}
+h1 span{color:var(--accent)}
+.sub{color:var(--muted);font-size:.85rem;font-family:var(--f-mono)}
+.filters{max-width:1180px;margin:0 auto;padding-block:0 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.filters label{font-size:.72rem;font-family:var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+input,select{font:inherit;font-size:.9rem;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-width:0}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+#q{width:200px} .num{width:84px} select{max-width:220px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font:inherit;font-size:.85rem;padding:5px 11px;border-radius:99px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.chip[aria-pressed="true"] .dot{box-shadow:0 0 0 2px var(--on-accent)}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.btn{font:inherit;font-size:.85rem;padding:6px 12px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+.toggle{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.toggle button{font:inherit;font-size:.82rem;padding:6px 10px;border:0;background:var(--bg);color:var(--fg);cursor:pointer}
+.toggle button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+#more{display:none}
+main{max-width:1180px;margin:0 auto;padding-block:14px 60px;display:flex;flex-direction:column;gap:10px}
+.bar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;color:var(--muted);font-size:.85rem}
+.list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
+.row{display:grid;grid-template-columns:52px minmax(0,1fr) 150px 150px 40px;gap:12px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row.head{font-family:var(--f-mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:var(--bg);padding-block:8px}
+.lotno{font-family:var(--f-mono);color:var(--muted);font-size:.85rem}
+.ttl{font-weight:600;line-height:1.35}
+.ttl a{color:inherit;text-decoration:none} .ttl a:hover{text-decoration:underline}
+.meta{color:var(--muted);font-size:.82rem;display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:2px;align-items:center}
+.tag{font-family:var(--f-mono);font-size:.7rem;padding:1px 6px;border-radius:4px;background:var(--bg);border:1px solid var(--line)}
+.tag.chk{border-color:var(--mixed);color:var(--mixed)}
+.money{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--f-mono);font-size:.88rem;line-height:1.35}
+.money small{display:block;color:var(--muted);font-size:.72rem;font-family:var(--f-body)}
+.star{font-size:1.25rem;background:none;border:0;cursor:pointer;color:var(--line);line-height:1;padding:4px}
+.star[aria-pressed="true"]{color:var(--accent)}
+.empty{padding:40px 16px;text-align:center;color:var(--muted)}
+.note{font-size:.8rem;color:var(--muted)}
+@media (max-width:760px){
+  header{position:static}
+  #q{width:100%} .filters label{flex:1 1 40%;min-width:0} .filters label.wide{flex:1 1 100%} .filters select,.filters input{width:100%;max-width:none}
+  .row{grid-template-columns:40px minmax(0,1fr) 36px;grid-template-areas:"n t s" "n m m"}
+  .row .lotno{grid-area:n;align-self:start} .row .tcell{grid-area:t} .row .star{grid-area:s;align-self:start}
+  .row .money{grid-area:m;text-align:left;display:flex;gap:16px}
+  .row .money+.money{display:none}
+  .row .mm{grid-area:m;display:flex;gap:18px}
+  .row.head{display:none}
+}
+@media (prefers-reduced-motion:no-preference){.row{transition:background .15s}.row:hover{background:var(--bg)}}
+</style>
+
+<header>
+  <div class="hrow gut">
+    <h1>Wine<span>Checker</span> · 2026 December Auction</h1>
+    <div class="sub" id="when"></div>
+  </div>
+  <div class="filters gut" role="search">
+    <label class="wide">Search<input id="q" type="search" placeholder="producer, wine, region…"></label>
+    <div class="chips" id="colours" aria-label="Type"></div>
+    <label>Region<select id="region"><option value="">All</option></select></label>
+    <label>Producer<select id="producer"><option value="">All</option></select></label>
+    <label>Vintage from<input id="vmin" class="num" type="number" inputmode="numeric" placeholder="1945"></label>
+    <label>to<input id="vmax" class="num" type="number" inputmode="numeric" placeholder="2023"></label>
+    <label>Max HKD / btl<input id="pmax" class="num" type="number" inputmode="numeric" placeholder="any"></label>
+    <label>Size<select id="size"><option value="">All</option><option value="750">750 ml</option><option value="1500">Magnum 1.5 L</option><option value="big">Larger than 1.5 L</option></select></label>
+    <label>Lots<select id="kind"><option value="">All wine lots</option><option value="single">Single wine only</option><option value="mixed">Mixed lots only</option></select></label>
+    <label>Sort<select id="sort">
+      <option value="lot">Lot number</option>
+      <option value="pb">Price per bottle, low first</option>
+      <option value="pbd">Price per bottle, high first</option>
+      <option value="tot">Lot price, low first</option>
+      <option value="vin">Vintage, old first</option>
+      <option value="score">Critic score, high first</option>
+    </select></label>
+    <button class="btn" id="reset" type="button">Clear filters</button>
+  </div>
+</header>
+
+<main class="gut">
+  <div class="bar">
+    <div id="count">Loading lots…</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <div class="toggle" role="group" aria-label="Price shown">
+        <button type="button" id="vLot" aria-pressed="false">Whole lot</button>
+        <button type="button" id="vBtl" aria-pressed="true">Per bottle</button>
+      </div>
+      <div class="toggle" role="group" aria-label="Premium">
+        <button type="button" id="pOn" aria-pressed="true">+22.5% premium</button>
+        <button type="button" id="pOff" aria-pressed="false">Hammer only</button>
+      </div>
+      <button type="button" class="btn" id="starsOnly" aria-pressed="false">★ My stars only</button>
+    </div>
+  </div>
+  <div class="list" id="list"></div>
+  <p class="note">Prices are the Madison estimate range. "Per bottle" for mixed sizes means per 750 ml equivalent. Market price and value badges arrive in phase 3. Stars stay in this browser only for now; shared stars come in phase 5.</p>
+</main>
+
+<script>
+(function(){
+const PREMIUM = 0.225;
+const LIVE = new Date('2026-12-12T11:00:00+08:00');
+const COLOURS = [["Red","var(--red)"],["White","var(--white)"],["Champagne","var(--fizz)"],["Spirits","var(--muted)"]];
+const $ = id => document.getElementById(id);
+const fmt = n => n==null ? "–" : "HKD " + Math.round(n).toLocaleString("en-US");
+const store = {
+  get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+let LOTS = [];
+let stars = new Set(store.get("wc-stars-187", []));
+const st = Object.assign({colours:["Red"], view:"btl", prem:true, starsOnly:false}, store.get("wc-view-187", {}));
+
+function when(){
+  const d = LIVE - Date.now();
+  if (d <= 0) { $("when").textContent = "Live sale started 12 Dec 11:00 HKT"; return; }
+  const days = Math.floor(d/864e5), hrs = Math.floor(d%864e5/36e5);
+  $("when").textContent = `Live 12 Dec 11:00 HKT · in ${days} d ${hrs} h · premium 22.5%`;
+}
+
+function units(l){ // bottles for single-size lots, else 750 ml equivalents
+  if (l.bottles && l.bottle_ml && l.parts.length===1) return l.bottles;
+  return l.eq750 || null;
+}
+function price(l, which){ // which: 'low' | 'high'
+  const h = which==="high" ? l.est_high : (l.current || l.est_low);
+  if (h==null) return null;
+  const all = st.prem ? h*(1+PREMIUM) : h;
+  if (st.view==="lot") return all;
+  const u = units(l); return u ? all/u : null;
+}
+function perBottleLow(l){ const u=units(l), h=l.current||l.est_low; return (u&&h)? h*(1+PREMIUM)/u : null; }
+function scoreNum(s){ const m=(s||"").match(/(\d+)/); return m? +m[1] : 0; }
+
+function buildChips(){
+  const box=$("colours");
+  COLOURS.forEach(([c,col])=>{
+    const n = LOTS.filter(l=> (c==="Spirits"? l.category==="Spirits" : l.colour===c)).length;
+    const b=document.createElement("button"); b.type="button"; b.className="chip"; b.dataset.c=c;
+    b.innerHTML=`<span class="dot" style="background:${col}"></span>${c} <span style="opacity:.7">${n}</span>`;
+    b.setAttribute("aria-pressed", st.colours.includes(c));
+    b.onclick=()=>{ const i=st.colours.indexOf(c); i>=0? st.colours.splice(i,1) : st.colours.push(c); b.setAttribute("aria-pressed", st.colours.includes(c)); render(); };
+    box.appendChild(b);
+  });
+}
+function fillSelect(sel, values){
+  const cur=sel.value; sel.length=1;
+  values.forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v;sel.appendChild(o)});
+  if (values.includes(cur)) sel.value=cur;
+}
+function colourOK(l){
+  if (!st.colours.length) return true;
+  if (l.category==="Spirits") return st.colours.includes("Spirits");
+  return st.colours.includes(l.colour) || (l.colour==="Mixed" && (st.colours.includes("Red")||st.colours.includes("White")));
+}
+
+function filtered(skip){
+  const q=$("q").value.trim().toLowerCase(), reg=$("region").value, pro=$("producer").value;
+  const vmin=+$("vmin").value||0, vmax=+$("vmax").value||9999, pmax=+$("pmax").value||0;
+  const size=$("size").value, kind=$("kind").value;
+  return LOTS.filter(l=>{
+    if (!colourOK(l)) return false;
+    if (q && !(l.title+" "+l.producer+" "+l.region).toLowerCase().includes(q)) return false;
+    if (skip!=="region" && reg && l.region!==reg) return false;
+    if (skip!=="producer" && pro && l.producer!==pro) return false;
+    if ((vmin||vmax<9999) && (l.vintage==null || l.vintage<vmin || l.vintage>vmax)) return false;
+    if (pmax){ const p=perBottleLow(l); if (p==null || p>pmax) return false; }
+    if (size==="750" && l.bottle_ml!==750) return false;
+    if (size==="1500" && l.bottle_ml!==1500) return false;
+    if (size==="big" && !(l.bottle_ml>1500)) return false;
+    if (kind==="single" && l.mixed) return false;
+    if (kind==="mixed" && !l.mixed) return false;
+    if (st.starsOnly && !stars.has(l.lot_id)) return false;
+    return true;
+  });
+}
+
+function render(){
+  store.set("wc-view-187", {colours:st.colours, view:st.view, prem:st.prem});
+  fillSelect($("region"), [...new Set(filtered("region").map(l=>l.region).filter(Boolean))].sort());
+  fillSelect($("producer"), [...new Set(filtered("producer").map(l=>l.producer).filter(Boolean))].sort((a,b)=>a.localeCompare(b)));
+  let rows=filtered();
+  const s=$("sort").value, pb=l=>perBottleLow(l)??Infinity;
+  const tot=l=>(l.current||l.est_low)??Infinity;
+  if (s==="pb") rows.sort((a,b)=>pb(a)-pb(b));
+  if (s==="pbd") rows.sort((a,b)=>(pb(b)===Infinity?-1:pb(b))-(pb(a)===Infinity?-1:pb(a)));
+  if (s==="tot") rows.sort((a,b)=>tot(a)-tot(b));
+  if (s==="vin") rows.sort((a,b)=>(a.vintage||9999)-(b.vintage||9999));
+  if (s==="score") rows.sort((a,b)=>scoreNum(b.score)-scoreNum(a.score));
+  if (s==="lot") rows.sort((a,b)=>a.lot_no-b.lot_no);
+
+  const btls = rows.reduce((t,l)=>t+(l.bottles||0),0);
+  $("count").textContent = `${rows.length} lots · ${btls.toLocaleString()} bottles · ${stars.size} starred`;
+  const unit = st.view==="lot" ? "whole lot" : "per bottle";
+  const pre = st.prem ? "incl. 22.5%" : "hammer";
+  const list=$("list");
+  if (!rows.length){ list.innerHTML=`<div class="empty">No lots match these filters. Try "Clear filters".</div>`; return; }
+  list.innerHTML = `<div class="row head"><div>Lot</div><div>Wine</div><div class="money">Low est. · ${unit}</div><div class="money">High est. · ${unit}</div><div></div></div>` +
+    rows.map(l=>{
+      const tags=[l.packing && `<span class="tag">${esc(l.packing)}</span>`, l.score && `<span class="tag">${esc(l.score)}</span>`, l.needs_check && `<span class="tag chk">mixed lot</span>`].filter(Boolean).join("");
+      const per = (st.view==="btl" && !(l.bottles && l.parts.length===1)) ? "per 750 ml eq." : pre;
+      return `<div class="row">
+        <div class="lotno">${l.lot_no}</div>
+        <div class="tcell"><div class="ttl"><a href="${l.url}" target="_blank" rel="noopener">${esc(l.title)}</a></div>
+          <div class="meta"><span>${esc(l.qty_text.replace(/\s*\(.*\)/,""))}</span>${l.region?`<span>${esc(l.region)}</span>`:""}${tags}</div></div>
+        <div class="money">${fmt(price(l,"low"))}<small>${l.current?"current bid":"low est."} · ${per}</small></div>
+        <div class="money">${fmt(price(l,"high"))}<small>high est.</small></div>
+        <button class="star" type="button" aria-label="Star lot ${l.lot_no}" aria-pressed="${stars.has(l.lot_id)}" data-id="${l.lot_id}">★</button>
+      </div>`;
+    }).join("");
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+
+$("list").addEventListener("click",e=>{
+  const b=e.target.closest(".star"); if(!b) return;
+  const id=+b.dataset.id; stars.has(id)?stars.delete(id):stars.add(id);
+  store.set("wc-stars-187",[...stars]); b.setAttribute("aria-pressed",stars.has(id));
+  $("count").textContent=$("count").textContent.replace(/\d+ starred/, stars.size+" starred");
+});
+["q","region","producer","vmin","vmax","pmax","size","kind","sort"].forEach(id=>$(id).addEventListener("input",render));
+function setPair(a,b,on){ $(a).setAttribute("aria-pressed",on); $(b).setAttribute("aria-pressed",!on); }
+$("vLot").onclick=()=>{st.view="lot";setPair("vLot","vBtl",true);render()};
+$("vBtl").onclick=()=>{st.view="btl";setPair("vLot","vBtl",false);render()};
+$("pOn").onclick=()=>{st.prem=true;setPair("pOn","pOff",true);render()};
+$("pOff").onclick=()=>{st.prem=false;setPair("pOn","pOff",false);render()};
+$("starsOnly").onclick=()=>{st.starsOnly=!st.starsOnly;$("starsOnly").setAttribute("aria-pressed",st.starsOnly);$("starsOnly").classList.toggle("chip",false);$("starsOnly").style.background=st.starsOnly?"var(--accent-soft)":"";render()};
+$("reset").onclick=()=>{["q","region","producer","vmin","vmax","pmax","size","kind"].forEach(id=>$(id).value="");$("sort").value="lot";st.colours=["Red"];document.querySelectorAll("#colours .chip").forEach(b=>b.setAttribute("aria-pressed",st.colours.includes(b.dataset.c)));render()};
+
+setPair("vLot","vBtl",st.view==="lot"); setPair("pOn","pOff",st.prem);
+when(); setInterval(when,60000);
+fetch("lots.json").then(r=>r.json()).then(d=>{LOTS=d.lots; buildChips(); render();})
+  .catch(()=>{$("count").textContent="Could not load lots.json. Open this page through a web server, not as a file.";});
+})();
+</script>
